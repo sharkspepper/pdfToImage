@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <div id="imgDiv"></div>
+</body>
+<script type="text/javascript" src="./js/pdf.min.js"></script>
+<script type="text/javascript" src="./js/pdf.worker.min.js"></script>
+
+<script type="text/javascript">
+    /**
+    * 把 dataURL  转成 blob
+    **/
+   function urlToBlob(url) {
+        return new Promise(resolve => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET',url, true);
+            xhr.responseType = 'blob';
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    resolve(xhr.response);
+                }
+            };
+            xhr.send();
+        });
+    }
+
+    /* 把 blob  转成 base64 */
+    function blobToBase64(blob){
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = ()=>{
+                resolve(reader.result)
+            }
+        })
+    }
+
+    /* 
+        一：测试图片
+     */
+    async function testImage(){
+        var imageUrl = "http://192.168.2.208:9000/test/1607673528534/c833da70-3b86-11eb-9ff2-8f616fac16c2.jpg"
+        var blobData = await urlToBlob(imageUrl)
+        const base64data = await blobToBase64(blobData)
+        const img = new Image();
+        img.src = base64data;
+        img.width = 800;
+        img.style.position = 'absolute';
+        img.style.top = '0';
+        img.style.left = '0';
+        img.style.right = '0';
+        img.style.bottom = '0';
+        img.style.margin = ' auto';
+        const newWin = window.open('', '_blank');
+        newWin.document.write(img.outerHTML);
+        newWin.document.title = 'test';
+    }
+    // 解注释 可测试
+    // testImage()
+
+
+    /* 
+        二：测试pdf
+    */
+    async function testPdf(pdfUrl){
+        let loadingTask = pdfjsLib.getDocument(pdfUrl);
+        let pdf = await loadingTask.promise
+        let results = await getAllPage(pdf) // pdf 生成了 base64图片
+
+        for(let i in results){
+            let image = new Image()
+            image.src = results[i]
+            image.onload = ()=>{
+                image.width = 500
+                image.height = 500
+                document.getElementById('imgDiv').append(image)
+            }
+        }
+    }
+    // 一次返回所有pages
+    async function getAllPage(pdf) {
+        const maxNum = pdf.numPages
+        let result = [];
+        for(var i=1;i <= maxNum; i++){
+            var task = await dealOnePage(i, pdf)
+            result.push(task)
+        }
+        return result;
+    }
+    function dealOnePage(index,pdf){
+        return new Promise((resolve, reject)=>{
+            pdf.getPage(index).then(async (page) => {
+                const viewport = page.getViewport({ scale: 1.0, });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                //渲染任务 
+                const renderTask = page.render({
+                    canvasContext: context,
+                    viewport,
+                })
+                await renderTask.promise
+                /* 方式一：事先定义好id为imgDiv元素,则可直接在视图显示 */
+                // document.getElementById("imgDiv").append(canvas)
+                /* 方式二:生成base64的图片(因为只需要生成的base64,所以不用渲染到界面) */
+                return resolve(canvas.toDataURL())
+                /* 结束 */
+            }).catch(function (err) {
+                reject(err);
+            })
+        })
+    }
+    const pdfUrl = "http://58.49.28.22:9000/test/lc/011710394373ImagePDF.pdf";
+    testPdf(pdfUrl);
+</script>
+</html>
