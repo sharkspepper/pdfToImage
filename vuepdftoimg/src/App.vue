@@ -1,15 +1,18 @@
 <template>
 	<div id="app">
-		<my-test></my-test>
+		<PdfToImage></PdfToImage>
+		<!-- <HtmlToPdf></HtmlToPdf> -->
 	</div>
 </template>
 
 <script>
-import myTest from '@/components/MyTest.vue'
+import PdfToImage from '@/components/PdfToImage.vue'
+// import HtmlToPdf from '@/components/HtmlToPdf.vue'
 export default {
 	name: 'App',
 	components: {
-		myTest
+		PdfToImage,
+		// HtmlToPdf
 	}
 }
 </script>
