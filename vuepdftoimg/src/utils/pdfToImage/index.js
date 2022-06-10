@@ -44,7 +44,16 @@ function dealOnePage(index,pdf){
  * @returns 
  */
 export default async function pdfToImage(pdfUrl){
-    let loadingTask = pdfJs.getDocument(pdfUrl);
+    // 1.
+    // let loadingTask = pdfJs.getDocument(pdfUrl);
+
+    // 2.解决内容加载不全 (cdn)
+    // let loadingTask = pdfJs.getDocument({url: pdfUrl, cMapUrl: 'https://unpkg.com/pdfjs-dist@2.2.228/cmaps/',cMapPacked: true});
+
+    // 3.解决内容加载不全 (本地资源) (将资源copy到public下)
+    let cMapUrl = "./pdf/cmaps/"
+    let loadingTask = pdfJs.getDocument({url: pdfUrl, cMapUrl,cMapPacked: true});
+    
     let pdf = await loadingTask.promise
     let results = await getAllPage(pdf) // pdf 生成了 base64图片
     return results
